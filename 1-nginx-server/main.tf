@@ -1,3 +1,7 @@
+locals {
+  keep_locally = "false"
+}
+
 terraform {
   required_providers {
     docker = {
@@ -11,12 +15,12 @@ provider "docker" {}
 
 resource "docker_image" "nginx" {
   name         = "nginx:latest"
-  keep_locally = false
+  keep_locally = local.keep_locally
 }
 
 resource "docker_container" "nginx" {
   image = docker_image.nginx.latest
-  name  = "tutorial"
+  name  = var.container_name
   ports {
     internal = 80
     external = 8000
