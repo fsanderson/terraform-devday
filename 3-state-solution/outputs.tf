@@ -18,3 +18,8 @@ output "london_arn" {
   description = "The ARN of the eu-west-2 instance"
   value       = aws_instance.second_app_server.arn
 }
+
+output "dynamodb_table_name" {
+  value       = aws_dynamodb_table.terraform_locks.name
+  description = "The name of the DynamoDB table"
+}
