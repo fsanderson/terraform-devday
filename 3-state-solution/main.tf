@@ -6,9 +6,13 @@ terraform {
     }
   }
 
-  backend {
-    
+  backend "s3" {
+    bucket         = "devdaybucket"
+    key            = "state/terraform.tfstate"
+    region         = "eu-west-2"
+    # dynamodb_table = "terraform-lock"
   }
+
 
   required_version = ">= 1.1.6"
 }
@@ -52,4 +56,31 @@ resource "aws_instance" "second_app_server" {
   tags = {
     Name = "${var.instance_name_london}-ec2"
   }
+}
+
+# s3 bucket for storing state
+resource "aws_s3_bucket" "s3_example" {
+  bucket = "devdaybucket"
+
+  provider = aws.london
+
+  tags = {
+    Name = "devdaybucket"
+  }
+}
+
+resource "aws_s3_bucket_acl" "s3_example" {
+  bucket = aws_s3_bucket.s3_example.id
+  acl    = "private"
+
+  provider = aws.london
+}
+
+resource "aws_s3_bucket_versioning" "s3_versioning" {
+  bucket = aws_s3_bucket.s3_example.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+
+  provider = aws.london
 }
