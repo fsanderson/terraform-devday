@@ -10,9 +10,10 @@ terraform {
     bucket         = "devdaybucket"
     key            = "state/terraform.tfstate"
     region         = "eu-west-2"
-    # dynamodb_table = "terraform-lock"
-  }
 
+    dynamodb_table = "terraform-lock"
+    encrypt        = true
+  }
 
   required_version = ">= 1.1.6"
 }
@@ -67,6 +68,14 @@ resource "aws_s3_bucket" "s3_example" {
   tags = {
     Name = "devdaybucket"
   }
+
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
 }
 
 resource "aws_s3_bucket_acl" "s3_example" {
@@ -84,3 +93,35 @@ resource "aws_s3_bucket_versioning" "s3_versioning" {
 
   provider = aws.london
 }
+
+resource "aws_kms_key" "mykey" {
+  description             = "This key is used to encrypt bucket objects"
+  deletion_window_in_days = 10
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "s3_encryption" {
+  bucket = aws_s3_bucket.s3_example.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.mykey.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+
+  provider = aws.london
+}
+
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = "terraform-lock"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"  
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+
+  provider = aws.london
+}
+
+
